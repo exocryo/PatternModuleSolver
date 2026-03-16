@@ -47,6 +47,23 @@ body {
   align-items: center;
 }
 
+.logic-controls {
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+  align-items: stretch;
+}
+
+.logic-controls button {
+  min-width: 220px;
+  text-align: left;
+}
+
+@media (max-width: 720px) {
+  .logic-controls button {
+    min-width: 100%;
+  }
+}
+
 .controls label {
   display: flex;
   flex-direction: column;

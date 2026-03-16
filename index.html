@@ -10,17 +10,13 @@
   <div class="app-shell">
     <header class="toolbar card">
       <div class="toolbar-group actions">
-        <button id="applyAnimatedBtn">Apply All Rules</button>
-        <button id="applyInstantBtn" class="secondary">Apply Instantly</button>
+        <button id="applyAnimatedBtn">Apply All Rules Sequentially</button>
+        <button id="applyInstantBtn">Apply All Rules Instantly</button>
         <button id="clearBtn" class="secondary">Clear</button>
         <button id="fillBtn" class="secondary">Fill ON</button>
         <button id="rotateLeftBtn" class="secondary">Rotate Left</button>
         <button id="rotateRightBtn" class="secondary">Rotate Right</button>
         <button id="printBtn" class="secondary">Print Grid</button>
-      </div>
-      <div class="toolbar-group actions">
-        <button id="threeModeBtn" class="secondary">3-in-a-row Mode</button>
-        <button id="indexBaseBtn" class="secondary">Index Base: 1</button>
       </div>
 
       <div class="toolbar-group controls">
@@ -30,14 +26,21 @@
         </label>
 
         <label class="delay-control">
-          <span>Delay per cell (<strong id="delayValue">300</strong> ms)</span>
+          <span>Sequential Delay per cell (<strong id="delayValue">100</strong> ms)</span>
           <input id="delaySlider" type="range" min="1" max="1500" step="1" value="100" />
         </label>
+      </div>
+
+      <div class="toolbar-group logic-controls">
+        <button id="threeSequenceModeBtn" class="secondary">3-in-row sequence: ON only</button>
+        <button id="threeScopeModeBtn" class="secondary">3-in-row scope: contiguous only</button>
+        <button id="neighborModeBtn" class="secondary">Neighbors: cardinal</button>
+        <button id="indexBaseBtn" class="secondary">Column base: 1-based</button>
       </div>
     </header>
 
     <section class="info-row card">
-      <div>Left click = toggle cell</div>
+      <div>Use the Buttons Above to Change Rule Logic</div>
     </section>
 
     <main class="main-layout">

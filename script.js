@@ -41,8 +41,10 @@ class RuleGridApp {
       ],
     };
 
-    this.selectedRuleset = "13";
-    this.threeInRowMode = "on_only";
+    this.selectedRuleset = "1";
+    this.threeSequenceMode = "on_only";
+    this.threeScopeMode = "contiguous";
+    this.neighborMode = "cardinal";
     this.indexBaseMode = "one_based";
 
     this.el = {
@@ -59,7 +61,9 @@ class RuleGridApp {
       rotateLeftBtn: document.getElementById("rotateLeftBtn"),
       rotateRightBtn: document.getElementById("rotateRightBtn"),
       printBtn: document.getElementById("printBtn"),
-      threeModeBtn: document.getElementById("threeModeBtn"),
+      threeSequenceModeBtn: document.getElementById("threeSequenceModeBtn"),
+      threeScopeModeBtn: document.getElementById("threeScopeModeBtn"),
+      neighborModeBtn: document.getElementById("neighborModeBtn"),
       indexBaseBtn: document.getElementById("indexBaseBtn"),
     };
 
@@ -93,10 +97,14 @@ class RuleGridApp {
     this.el.rotateLeftBtn.addEventListener("click", () => this.rotateLeft());
     this.el.rotateRightBtn.addEventListener("click", () => this.rotateRight());
     this.el.printBtn.addEventListener("click", () => this.printGrid());
-    this.el.threeModeBtn.addEventListener("click", () => this.toggleThreeInRowMode());
+    this.el.threeSequenceModeBtn.addEventListener("click", () => this.toggleThreeSequenceMode());
+    this.el.threeScopeModeBtn.addEventListener("click", () => this.toggleThreeScopeMode());
+    this.el.neighborModeBtn.addEventListener("click", () => this.toggleNeighborMode());
     this.el.indexBaseBtn.addEventListener("click", () => this.toggleIndexBaseMode());
 
-    this.updateThreeModeButton();
+    this.updateThreeSequenceModeButton();
+    this.updateThreeScopeModeButton();
+    this.updateNeighborModeButton();
     this.updateIndexBaseButton();
 
     this.refreshRulesDisplay();
@@ -113,7 +121,9 @@ class RuleGridApp {
       this.el.rotateRightBtn,
       this.el.applyAnimatedBtn,
       this.el.applyInstantBtn,
-      this.el.threeModeBtn,
+      this.el.threeSequenceModeBtn,
+      this.el.threeScopeModeBtn,
+      this.el.neighborModeBtn,
       this.el.indexBaseBtn,
     ].forEach((el) => {
       el.disabled = disabled;
@@ -121,12 +131,17 @@ class RuleGridApp {
   }
 
   refreshRulesDisplay() {
-    const threeInRowLabel = this.threeInRowMode === "on_only" ? "ON only" : "ON or OFF";
+    const threeSequenceLabel = this.threeSequenceMode === "on_only" ? "ON only" : "ON or OFF";
+    const threeScopeLabel = this.threeScopeMode === "contiguous" ? "contiguous only" : "whole row count";
+    const neighborLabel = this.neighborMode === "cardinal" ? "cardinal" : "8-way";
     const columnBaseLabel = this.indexBaseMode === "one_based" ? "1-based" : "0-based";
+
     const lines = [
       `Ruleset [${this.selectedRuleset}]`,
-      `3-in-row mode: ${threeInRowLabel}`,
-      `even-column mode: ${columnBaseLabel}`,
+      `3-in-row sequence mode: ${threeSequenceLabel}`,
+      `3-in-row scope: ${threeScopeLabel}`,
+      `Neighbor mode: ${neighborLabel}`,
+      `Even-column mode: ${columnBaseLabel}`,
       "",
     ];
 
@@ -142,23 +157,60 @@ class RuleGridApp {
     this.el.logText.scrollTop = this.el.logText.scrollHeight;
   }
 
-  updateThreeModeButton() {
-    this.el.threeModeBtn.textContent = this.threeInRowMode === "on_only"
-      ? "3-in-row: ON only"
-      : "3-in-row: ON or OFF";
-  }
-
-  toggleThreeInRowMode() {
-    if (this.isRunning) return;
-    this.threeInRowMode = this.threeInRowMode === "on_only" ? "uniform" : "on_only";
-    this.updateThreeModeButton();
-    this.refreshRulesDisplay();
-    this.logMessage(`3-in-row mode set to ${this.threeInRowMode === "on_only" ? "ON only" : "ON or OFF"}.`);
-  }
+  
 
   logicalColumnNumber(c) {
   return this.indexBaseMode === "one_based" ? c + 1 : c;
   }
+
+  updateThreeSequenceModeButton() {
+    this.el.threeSequenceModeBtn.textContent = this.threeSequenceMode === "on_only"
+      ? "3-in-row sequence: ON only"
+      : "3-in-row sequence: ON or OFF";
+  }
+
+  toggleThreeSequenceMode() {
+    if (this.isRunning) return;
+    this.threeSequenceMode = this.threeSequenceMode === "on_only" ? "uniform" : "on_only";
+    this.updateThreeSequenceModeButton();
+    this.refreshRulesDisplay();
+    this.logMessage(
+      `3-in-row sequence mode set to ${this.threeSequenceMode === "on_only" ? "ON only" : "ON or OFF"}.`
+    );
+  }
+
+  updateThreeScopeModeButton() {
+    this.el.threeScopeModeBtn.textContent = this.threeScopeMode === "contiguous"
+      ? "3-in-row scope: contiguous only"
+      : "3-in-row scope: whole row count";
+  }
+
+  toggleThreeScopeMode() {
+    if (this.isRunning) return;
+    this.threeScopeMode = this.threeScopeMode === "contiguous" ? "whole_row" : "contiguous";
+    this.updateThreeScopeModeButton();
+    this.refreshRulesDisplay();
+    this.logMessage(
+      `3-in-row scope set to ${this.threeScopeMode === "contiguous" ? "contiguous only" : "whole row count"}.`
+    );
+  }
+
+  updateNeighborModeButton() {
+    this.el.neighborModeBtn.textContent = this.neighborMode === "cardinal"
+      ? "Neighbors: cardinal"
+      : "Neighbors: 8-way";
+  }
+
+  toggleNeighborMode() {
+    if (this.isRunning) return;
+    this.neighborMode = this.neighborMode === "cardinal" ? "eight_way" : "cardinal";
+    this.updateNeighborModeButton();
+    this.refreshRulesDisplay();
+    this.logMessage(
+      `Neighbor mode set to ${this.neighborMode === "cardinal" ? "cardinal" : "8-way"}.`
+    );
+  }
+
 
   updateIndexBaseButton() {
     this.el.indexBaseBtn.textContent = this.indexBaseMode === "one_based"
@@ -254,7 +306,17 @@ class RuleGridApp {
 
   printGrid() {
     const gridText = this.grid.map((row) => row.map((cell) => (cell ? "1" : "0")).join(" ")).join("\n");
-    const report = `Grid:\n${gridText}\nStart: (${this.startRow}, ${this.startCol})\nRuleset: ${this.selectedRuleset}\n------------------------------`;
+    const report = [
+      "Grid:",
+      gridText,
+      `Ruleset: ${this.selectedRuleset}`,
+      `3-in-row sequence mode: ${this.threeSequenceMode === "on_only" ? "ON only" : "ON or OFF"}`,
+      `3-in-row scope: ${this.threeScopeMode === "contiguous" ? "contiguous only" : "whole row count"}`,
+      `Neighbor mode: ${this.neighborMode === "cardinal" ? "cardinal" : "8-way"}`,
+      `Column base: ${this.indexBaseMode === "one_based" ? "1-based" : "0-based"}`,
+      "------------------------------",
+    ].join("\n");
+
     console.log(report);
     this.logMessage(report);
   }
@@ -285,6 +347,31 @@ class RuleGridApp {
     return coords;
   }
 
+  neighborOffsets() {
+    if (this.neighborMode === "eight_way") {
+      return [
+        [-1, -1], [-1, 0], [-1, 1],
+        [0, -1],           [0, 1],
+        [1, -1],  [1, 0],  [1, 1],
+      ];
+    }
+
+    return [
+      [-1, 0],
+      [1, 0],
+      [0, -1],
+      [0, 1],
+    ];
+  }
+
+  neighborCount(r, c) {
+    let count = 0;
+    for (const [dr, dc] of this.neighborOffsets()) {
+      if (this.isOn(r + dr, c + dc)) count += 1;
+    }
+    return count;
+  }
+
   isOn(r, c) {
     return r >= 0 && r < this.rows && c >= 0 && c < this.cols ? this.grid[r][c] : false;
   }
@@ -309,6 +396,17 @@ class RuleGridApp {
   }
 
   hasThreeInARowHorizontally(r, c) {
+    if (this.threeScopeMode === "whole_row") {
+      const onCount = this.rowOnCount(r);
+      const offCount = this.cols - onCount;
+
+      if (this.threeSequenceMode === "on_only") {
+        return onCount >= 3;
+      }
+
+      return onCount >= 3 || offCount >= 3;
+    }
+
     const patterns = [
       [c - 2, c - 1, c],
       [c - 1, c, c + 1],
@@ -324,11 +422,11 @@ class RuleGridApp {
       const B = this.isOn(r, b);
       const D = this.isOn(r, d);
 
-      if (this.threeInRowMode === "uniform") {
-        return A === B && B === D;
+      if (this.threeSequenceMode === "on_only") {
+        return A && B && D;
       }
 
-      return A && B && D;
+      return A === B && B === D;
     });
   }
 
@@ -341,11 +439,11 @@ class RuleGridApp {
 
   conditionMatches(conditionName, r, c) {
     switch (conditionName) {
-      case "exactly_1_neighbors": return this.orthogonalNeighborCount(r, c) === 1;
-      case "exactly_2_neighbors": return this.orthogonalNeighborCount(r, c) === 2;
-      case "exactly_3_neighbors": return this.orthogonalNeighborCount(r, c) === 3;
-      case "more_than_1_neighbors": return this.orthogonalNeighborCount(r, c) > 1;
-      case "no_neighbors_enabled": return this.orthogonalNeighborCount(r, c) === 0;
+      case "exactly_1_neighbors": return this.neighborCount(r, c) === 1;
+      case "exactly_2_neighbors": return this.neighborCount(r, c) === 2;
+      case "exactly_3_neighbors": return this.neighborCount(r, c) === 3;
+      case "more_than_1_neighbors": return this.neighborCount(r, c) > 1;
+      case "no_neighbors_enabled": return this.neighborCount(r, c) === 0;
       case "cell_above_enabled": return this.isOn(r - 1, c);
       case "left_and_right_enabled": return this.isOn(r, c - 1) && this.isOn(r, c + 1);
       case "column_even_count": return this.columnOnCount(c) % 2 === 0;
