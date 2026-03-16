@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Directional Rule Grid</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="toolbar card">
+      <div class="toolbar-group actions">
+        <button id="applyAnimatedBtn">Apply All Rules</button>
+        <button id="applyInstantBtn" class="secondary">Apply Instantly</button>
+        <button id="clearBtn" class="secondary">Clear</button>
+        <button id="fillBtn" class="secondary">Fill ON</button>
+        <button id="rotateLeftBtn" class="secondary">Rotate Left</button>
+        <button id="rotateRightBtn" class="secondary">Rotate Right</button>
+        <button id="printBtn" class="secondary">Print Grid</button>
+      </div>
+
+      <div class="toolbar-group controls">
+        <label>
+          <span>Ruleset</span>
+          <select id="rulesetSelect"></select>
+        </label>
+
+        <label class="delay-control">
+          <span>Delay per cell (<strong id="delayValue">300</strong> ms)</span>
+          <input id="delaySlider" type="range" min="1" max="1500" step="1" value="300" />
+        </label>
+      </div>
+    </header>
+
+    <section class="info-row card">
+      <div>Left click = toggle cell | Right click = set start cell</div>
+      <div id="startLabel">Start: (0, 0)</div>
+    </section>
+
+    <main class="main-layout">
+      <section class="card grid-panel">
+        <div id="grid" class="grid" aria-label="Rule grid"></div>
+      </section>
+
+      <section class="side-panel">
+        <section class="card panel-block">
+          <h2>Rules</h2>
+          <pre id="rulesText" class="panel-text"></pre>
+        </section>
+
+        <section class="card panel-block log-block">
+          <h2>Log</h2>
+          <pre id="logText" class="panel-text"></pre>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
