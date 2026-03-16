@@ -390,6 +390,7 @@ class RuleGridApp {
       `- Even column numbering: ${columnBaseLabel}`,
       `- Zero in even checks: ${zeroEvenLabel}`,
       "",
+      "Rotation state: " + (this.rotationState === 0 ? "None" : `${this.rotationState * 90}° rotated`),
       "Rules in selected ruleset:",
       ...activeRules.map(
         ([direction, conditionName, action], i) =>
