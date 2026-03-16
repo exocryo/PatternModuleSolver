@@ -93,6 +93,7 @@ class RuleGridApp {
     this.el.rotateLeftBtn.addEventListener("click", () => this.rotateLeft());
     this.el.rotateRightBtn.addEventListener("click", () => this.rotateRight());
     this.el.printBtn.addEventListener("click", () => this.printGrid());
+    this.el.threeModeBtn.addEventListener("click", () => this.toggleThreeInRowMode());
     this.el.indexBaseBtn.addEventListener("click", () => this.toggleIndexBaseMode());
 
     this.updateThreeModeButton();
