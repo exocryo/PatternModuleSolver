@@ -3,8 +3,6 @@ class RuleGridApp {
     this.rows = rows;
     this.cols = cols;
     this.grid = Array.from({ length: rows }, () => Array(cols).fill(false));
-    this.startRow = 0;
-    this.startCol = 0;
     this.isRunning = false;
     this.highlightedCell = null;
     this.pendingTimeout = null;
@@ -49,7 +47,6 @@ class RuleGridApp {
       grid: document.getElementById("grid"),
       rulesText: document.getElementById("rulesText"),
       logText: document.getElementById("logText"),
-      startLabel: document.getElementById("startLabel"),
       rulesetSelect: document.getElementById("rulesetSelect"),
       delaySlider: document.getElementById("delaySlider"),
       delayValue: document.getElementById("delayValue"),
@@ -126,33 +123,26 @@ class RuleGridApp {
   }
 
   renderGrid() {
-    this.el.grid.style.gridTemplateColumns = `repeat(${this.cols}, minmax(74px, 1fr))`;
+    this.el.grid.style.gridTemplateColumns = `repeat(${this.cols}, var(--cell-size))`;
     this.el.grid.innerHTML = "";
 
     for (let r = 0; r < this.rows; r += 1) {
       for (let c = 0; c < this.cols; c += 1) {
         const btn = document.createElement("button");
         const on = this.grid[r][c];
-        const isStart = r === this.startRow && c === this.startCol;
         const isCurrent = this.highlightedCell && this.highlightedCell[0] === r && this.highlightedCell[1] === c;
 
         btn.type = "button";
         btn.className = "cell";
         btn.classList.add(on ? "on" : "off");
-        if (isStart) btn.classList.add("start");
         if (isCurrent) btn.classList.add("current");
-        btn.innerHTML = isStart ? `${on ? "ON" : "OFF"}` : (on ? "ON" : "OFF");
+        btn.textContent = on ? "ON" : "OFF";
         btn.addEventListener("click", () => this.toggleCell(r, c));
-        btn.addEventListener("contextmenu", (event) => {
-          event.preventDefault();
-          this.setStart(r, c);
-        });
 
         this.el.grid.appendChild(btn);
       }
     }
 
-    this.el.startLabel.textContent = `(${this.startRow}, ${this.startCol})`;
   }
 
   toggleCell(r, c) {
@@ -161,13 +151,6 @@ class RuleGridApp {
     this.renderGrid();
   }
 
-  setStart(r, c) {
-    if (this.isRunning) return;
-    this.startRow = r;
-    this.startCol = c;
-    this.renderGrid();
-    this.logMessage(`Start cell set to (${r}, ${c})`);
-  }
 
   clearGrid() {
     if (this.isRunning) return;
@@ -193,14 +176,9 @@ class RuleGridApp {
       Array.from({ length: oldRows }, (_, nc) => this.grid[nc][oldCols - 1 - nr])
     );
 
-    const newStartRow = oldCols - 1 - this.startCol;
-    const newStartCol = this.startRow;
-
     this.grid = newGrid;
     this.rows = oldCols;
     this.cols = oldRows;
-    this.startRow = newStartRow;
-    this.startCol = newStartCol;
     this.highlightedCell = null;
     this.renderGrid();
     this.logMessage("Grid rotated left.");
@@ -214,14 +192,9 @@ class RuleGridApp {
       Array.from({ length: oldRows }, (_, nc) => this.grid[oldRows - 1 - nc][nr])
     );
 
-    const newStartRow = this.startCol;
-    const newStartCol = oldRows - 1 - this.startRow;
-
     this.grid = newGrid;
     this.rows = oldCols;
     this.cols = oldRows;
-    this.startRow = newStartRow;
-    this.startCol = newStartCol;
     this.highlightedCell = null;
     this.renderGrid();
     this.logMessage("Grid rotated right.");
