@@ -42,6 +42,7 @@ class RuleGridApp {
     };
 
     this.selectedRuleset = "13";
+    this.threeInRowMode = "on_only";
 
     this.el = {
       grid: document.getElementById("grid"),
@@ -57,6 +58,7 @@ class RuleGridApp {
       rotateLeftBtn: document.getElementById("rotateLeftBtn"),
       rotateRightBtn: document.getElementById("rotateRightBtn"),
       printBtn: document.getElementById("printBtn"),
+      threeModeBtn: document.getElementById("threeModeBtn"),
     };
 
     this.init();
@@ -89,6 +91,9 @@ class RuleGridApp {
     this.el.rotateLeftBtn.addEventListener("click", () => this.rotateLeft());
     this.el.rotateRightBtn.addEventListener("click", () => this.rotateRight());
     this.el.printBtn.addEventListener("click", () => this.printGrid());
+    this.el.threeModeBtn.addEventListener("click", () => this.toggleThreeInRowMode());
+
+    this.updateThreeModeButton();
 
     this.refreshRulesDisplay();
     this.logMessage("Ready.");
@@ -104,13 +109,15 @@ class RuleGridApp {
       this.el.rotateRightBtn,
       this.el.applyAnimatedBtn,
       this.el.applyInstantBtn,
+      this.el.threeModeBtn,
     ].forEach((el) => {
       el.disabled = disabled;
     });
   }
 
   refreshRulesDisplay() {
-    const lines = [`Ruleset [${this.selectedRuleset}]`, ""];
+    const threeInRowLabel = this.threeInRowMode === "on_only" ? "ON only" : "ON or OFF";
+    const lines = [`Ruleset [${this.selectedRuleset}]`, `3-in-row mode: ${threeInRowLabel}`, ""];
     for (const [direction, conditionName, action] of this.rulesets[this.selectedRuleset]) {
       lines.push(`[${direction}] IF ${conditionName.replaceAll("_", " ").toUpperCase()} -> ${action.toUpperCase()}`);
     }
@@ -120,6 +127,20 @@ class RuleGridApp {
   logMessage(msg) {
     this.el.logText.textContent += `${msg}\n`;
     this.el.logText.scrollTop = this.el.logText.scrollHeight;
+  }
+
+  updateThreeModeButton() {
+    this.el.threeModeBtn.textContent = this.threeInRowMode === "on_only"
+      ? "3-in-row: ON only"
+      : "3-in-row: ON or OFF";
+  }
+
+  toggleThreeInRowMode() {
+    if (this.isRunning) return;
+    this.threeInRowMode = this.threeInRowMode === "on_only" ? "uniform" : "on_only";
+    this.updateThreeModeButton();
+    this.refreshRulesDisplay();
+    this.logMessage(`3-in-row mode set to ${this.threeInRowMode === "on_only" ? "ON only" : "ON or OFF"}.`);
   }
 
   renderGrid() {
@@ -263,10 +284,21 @@ class RuleGridApp {
       [c, c + 1, c + 2],
     ];
 
-    return patterns.some(([a, b, d]) => (
-      a >= 0 && b >= 0 && d >= 0 && a < this.cols && b < this.cols && d < this.cols
-      && this.isOn(r, a) && this.isOn(r, b) && this.isOn(r, d)
-    ));
+    return patterns.some(([a, b, d]) => {
+      if (a < 0 || b < 0 || d < 0 || a >= this.cols || b >= this.cols || d >= this.cols) {
+        return false;
+      }
+
+      const A = this.isOn(r, a);
+      const B = this.isOn(r, b);
+      const D = this.isOn(r, d);
+
+      if (this.threeInRowMode === "uniform") {
+        return A === B && B === D;
+      }
+
+      return A && B && D;
+    });
   }
 
   applyAction(r, c, action) {
