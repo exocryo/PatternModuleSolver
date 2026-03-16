@@ -1,5 +1,5 @@
 class RuleGridApp {
-  constructor(rows = 4, cols = 7) {
+  constructor(rows = 7, cols = 4) {
     this.rows = rows;
     this.cols = cols;
     this.grid = Array.from({ length: rows }, () => Array(cols).fill(false));
