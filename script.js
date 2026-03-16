@@ -412,5 +412,5 @@ class RuleGridApp {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
-  new RuleGridApp(4, 7);
+  new RuleGridApp(7, 4);
 });
