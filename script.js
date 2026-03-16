@@ -152,13 +152,14 @@ class RuleGridApp {
       this.el.rotateRightBtn,
       this.el.applyAnimatedBtn,
       this.el.applyInstantBtn,
-      this.el.threeSequenceModeBtn,
-      this.el.threeScopeModeBtn,
-      this.el.neighborModeBtn,
-      this.el.indexBaseBtn,
+      this.el.threeSequenceModeSelect,
+      this.el.threeScopeModeSelect,
+      this.el.neighborModeSelect,
+      this.el.indexBaseModeSelect,
       this.el.stepRuleBtn,
+      this.el.resetRotationBtn,
     ].forEach((el) => {
-      el.disabled = disabled;
+      if (el) el.disabled = disabled;
     });
   }
 
