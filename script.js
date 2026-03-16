@@ -43,6 +43,7 @@ class RuleGridApp {
 
     this.selectedRuleset = "13";
     this.threeInRowMode = "on_only";
+    this.indexBaseMode = "one_based";
 
     this.el = {
       grid: document.getElementById("grid"),
@@ -59,6 +60,7 @@ class RuleGridApp {
       rotateRightBtn: document.getElementById("rotateRightBtn"),
       printBtn: document.getElementById("printBtn"),
       threeModeBtn: document.getElementById("threeModeBtn"),
+      indexBaseBtn: document.getElementById("indexBaseBtn"),
     };
 
     this.init();
@@ -91,9 +93,10 @@ class RuleGridApp {
     this.el.rotateLeftBtn.addEventListener("click", () => this.rotateLeft());
     this.el.rotateRightBtn.addEventListener("click", () => this.rotateRight());
     this.el.printBtn.addEventListener("click", () => this.printGrid());
-    this.el.threeModeBtn.addEventListener("click", () => this.toggleThreeInRowMode());
+    this.el.indexBaseBtn.addEventListener("click", () => this.toggleIndexBaseMode());
 
     this.updateThreeModeButton();
+    this.updateIndexBaseButton();
 
     this.refreshRulesDisplay();
     this.logMessage("Ready.");
@@ -110,6 +113,7 @@ class RuleGridApp {
       this.el.applyAnimatedBtn,
       this.el.applyInstantBtn,
       this.el.threeModeBtn,
+      this.el.indexBaseBtn,
     ].forEach((el) => {
       el.disabled = disabled;
     });
@@ -117,10 +121,18 @@ class RuleGridApp {
 
   refreshRulesDisplay() {
     const threeInRowLabel = this.threeInRowMode === "on_only" ? "ON only" : "ON or OFF";
-    const lines = [`Ruleset [${this.selectedRuleset}]`, `3-in-row mode: ${threeInRowLabel}`, ""];
+    const columnBaseLabel = this.indexBaseMode === "one_based" ? "1-based" : "0-based";
+    const lines = [
+      `Ruleset [${this.selectedRuleset}]`,
+      `3-in-row mode: ${threeInRowLabel}`,
+      `even-column mode: ${columnBaseLabel}`,
+      "",
+    ];
+
     for (const [direction, conditionName, action] of this.rulesets[this.selectedRuleset]) {
       lines.push(`[${direction}] IF ${conditionName.replaceAll("_", " ").toUpperCase()} -> ${action.toUpperCase()}`);
     }
+
     this.el.rulesText.textContent = lines.join("\n");
   }
 
@@ -141,6 +153,24 @@ class RuleGridApp {
     this.updateThreeModeButton();
     this.refreshRulesDisplay();
     this.logMessage(`3-in-row mode set to ${this.threeInRowMode === "on_only" ? "ON only" : "ON or OFF"}.`);
+  }
+
+  logicalColumnNumber(c) {
+  return this.indexBaseMode === "one_based" ? c + 1 : c;
+  }
+
+  updateIndexBaseButton() {
+    this.el.indexBaseBtn.textContent = this.indexBaseMode === "one_based"
+      ? "Column base: 1-based"
+      : "Column base: 0-based";
+  }
+
+  toggleIndexBaseMode() {
+    if (this.isRunning) return;
+    this.indexBaseMode = this.indexBaseMode === "one_based" ? "zero_based" : "one_based";
+    this.updateIndexBaseButton();
+    this.refreshRulesDisplay();
+    this.logMessage(`Column numbering set to ${this.indexBaseMode === "one_based" ? "1-based" : "0-based"}.`);
   }
 
   renderGrid() {
@@ -318,7 +348,7 @@ class RuleGridApp {
       case "cell_above_enabled": return this.isOn(r - 1, c);
       case "left_and_right_enabled": return this.isOn(r, c - 1) && this.isOn(r, c + 1);
       case "column_even_count": return this.columnOnCount(c) % 2 === 0;
-      case "on_even_column_and_enabled": return ((c + 1) % 2 === 0) && this.isOn(r, c);
+      case "on_even_column_and_enabled": return (this.logicalColumnNumber(c) % 2 === 0) && this.isOn(r, c);
       case "three_in_a_row_horizontally": return this.hasThreeInARowHorizontally(r, c);
       case "row_more_than_3_enabled": return this.rowOnCount(r) > 3;
       case "row_more_than_2_enabled": return this.rowOnCount(r) > 2;
