@@ -117,13 +117,18 @@ input:disabled {
 }
 
 .grid {
+  --cell-size: 96px;
   display: grid;
   gap: 8px;
+  width: max-content;
+  max-width: 100%;
 }
 
 .cell {
-  min-height: 88px;
-  min-width: 92px;
+  width: var(--cell-size);
+  min-width: 0;
+  min-height: 0;
+  aspect-ratio: 1 / 1;
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   padding: 8px;
@@ -197,9 +202,11 @@ input:disabled {
     align-items: flex-start;
   }
 
+  .grid {
+    --cell-size: 74px;
+  }
+
   .cell {
-    min-width: 74px;
-    min-height: 74px;
     font-size: 0.95rem;
   }
 }
