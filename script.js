@@ -49,7 +49,6 @@ class RuleGridApp {
       grid: document.getElementById("grid"),
       rulesText: document.getElementById("rulesText"),
       logText: document.getElementById("logText"),
-      startLabel: document.getElementById("startLabel"),
       rulesetSelect: document.getElementById("rulesetSelect"),
       delaySlider: document.getElementById("delaySlider"),
       delayValue: document.getElementById("delayValue"),
@@ -141,7 +140,7 @@ class RuleGridApp {
         btn.classList.add(on ? "on" : "off");
         if (isStart) btn.classList.add("start");
         if (isCurrent) btn.classList.add("current");
-        btn.innerHTML = isStart ? `${on ? "ON" : "OFF"}<br>Start` : (on ? "ON" : "OFF");
+        btn.innerHTML = isStart ? `${on ? "ON" : "OFF"}` : (on ? "ON" : "OFF");
         btn.addEventListener("click", () => this.toggleCell(r, c));
         btn.addEventListener("contextmenu", (event) => {
           event.preventDefault();
