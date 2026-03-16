@@ -49,6 +49,8 @@ class RuleGridApp {
     this.neighborMode = "cardinal";
     this.indexBaseMode = "one_based";
     this.debugRuleIndex = 0;
+    this.startingGridSnapshot = null;
+    this.lastCompletedGridSnapshot = null;
 
     this.el = {
       grid: document.getElementById("grid"),
@@ -72,6 +74,7 @@ class RuleGridApp {
       indexBaseModeSelect: document.getElementById("indexBaseModeSelect"),
       stepRuleBtn: document.getElementById("stepRuleBtn"),
       zeroEvenModeSelect: document.getElementById("zeroEvenModeSelect"),
+      exportRunBtn: document.getElementById("exportRunBtn"),
     };
 
     this.init();
@@ -91,6 +94,7 @@ class RuleGridApp {
     this.el.neighborModeSelect.value = this.neighborMode;
     this.el.indexBaseModeSelect.value = this.indexBaseMode;
     this.el.zeroEvenModeSelect.value = this.zeroCountsAsEven ? "include" : "exclude";
+    this.el.exportRunBtn.addEventListener("click", () => this.exportRunSummary());
 
     this.el.rulesetSelect.addEventListener("change", () => {
       this.selectedRuleset = this.el.rulesetSelect.value;
@@ -172,6 +176,7 @@ class RuleGridApp {
       this.el.stepRuleBtn,
       this.el.resetRotationBtn,
       this.el.zeroEvenModeSelect,
+      this.el.exportRunBtn,
     ].forEach((el) => {
       if (el) el.disabled = disabled;
     });
@@ -326,6 +331,99 @@ class RuleGridApp {
     this.renderGrid();
     this.logMessage("Grid rotation reset to original orientation.");
   }
+
+  cloneGrid(grid = this.grid) {
+  return grid.map((row) => [...row]);
+}
+
+  gridToText(grid) {
+    return grid.map((row) => row.map((cell) => (cell ? "1" : "0")).join(" ")).join("\n");
+  }
+
+  captureStartingSnapshot() {
+    this.startingGridSnapshot = this.cloneGrid();
+  }
+
+  captureFinalSnapshot() {
+    this.lastCompletedGridSnapshot = this.cloneGrid();
+  }
+
+  buildRunSummaryText() {
+    const activeRules = this.rulesets[this.selectedRuleset] || [];
+
+    const threeSequenceLabel =
+      this.threeSequenceMode === "on_only" ? "ON only" : "ON or OFF";
+
+    let threeScopeLabel = "";
+    if (this.threeScopeMode === "contiguous") {
+      threeScopeLabel = "Cell must be in sequence";
+    } else if (this.threeScopeMode === "whole_row") {
+      threeScopeLabel = "3+ matching cells anywhere in row";
+    } else {
+      threeScopeLabel = "Sequence anywhere in row";
+    }
+
+    const neighborLabel =
+      this.neighborMode === "cardinal"
+        ? "Cardinal (N,S,E,W)"
+        : "8-direction (Minesweeper)";
+
+    const columnBaseLabel =
+      this.indexBaseMode === "one_based" ? "1-based" : "0-based";
+
+    const zeroEvenLabel =
+      this.zeroCountsAsEven ? "0 counts as even" : "0 does not count as even";
+
+    const startingGrid = this.startingGridSnapshot || this.grid;
+    const finalGrid = this.lastCompletedGridSnapshot || this.grid;
+
+    const lines = [
+      "Directional Rule Grid Export",
+      "============================",
+      "",
+      `Ruleset: ${this.selectedRuleset}`,
+      "",
+      "Rule logic settings:",
+      `- 3-in-row match type: ${threeSequenceLabel}`,
+      `- 3-in-row scope: ${threeScopeLabel}`,
+      `- Neighbor definition: ${neighborLabel}`,
+      `- Even column numbering: ${columnBaseLabel}`,
+      `- Zero in even checks: ${zeroEvenLabel}`,
+      "",
+      "Rules in selected ruleset:",
+      ...activeRules.map(
+        ([direction, conditionName, action], i) =>
+          `${i + 1}. [${direction}] ${conditionName} -> ${action}`
+      ),
+      "",
+      "Starting grid:",
+      this.gridToText(startingGrid),
+      "",
+      "Final grid:",
+      this.gridToText(finalGrid),
+      "",
+    ];
+
+    return lines.join("\n");
+  }
+
+  exportRunSummary() {
+    const text = this.buildRunSummaryText();
+    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `rule-grid-ruleset-${this.selectedRuleset}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    URL.revokeObjectURL(url);
+    this.logMessage("Exported run summary.");
+  }
+
+
 
   printGrid() {
     const gridText = this.grid.map((row) => row.map((cell) => (cell ? "1" : "0")).join(" ")).join("\n");
@@ -582,6 +680,7 @@ class RuleGridApp {
 
   applyAllRulesInstant() {
     if (this.isRunning) return;
+    this.captureStartingSnapshot();
 
     const { activeRules, startIndex } = this.getActiveRulesFromCurrentPosition();
     if (!activeRules.length) return;
@@ -602,6 +701,7 @@ class RuleGridApp {
     this.highlightedCell = null;
     this.renderGrid();
 
+    this.captureFinalSnapshot();
     this.debugRuleIndex = 0;
 
     this.logMessage("Ruleset pass complete.");
@@ -610,6 +710,7 @@ class RuleGridApp {
 
   applyAllRulesAnimated() {
     if (this.isRunning) return;
+    this.captureStartingSnapshot();
 
     const { activeRules, startIndex } = this.getActiveRulesFromCurrentPosition();
     if (!activeRules.length) return;
@@ -634,6 +735,7 @@ class RuleGridApp {
     if (this.ruleIndex >= activeRules.length) {
       this.highlightedCell = null;
       this.renderGrid();
+      this.captureFinalSnapshot();
       this.debugRuleIndex = 0;
       this.logMessage("Done.");
       this.logMessage("========================================");
