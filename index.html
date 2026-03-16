@@ -16,10 +16,11 @@
       </div>
       <div class="toolbar-group actions">
         <button id="clearBtn" class="secondary">Clear</button>
-        <button id="fillBtn" class="secondary">Fill ON</button>
+        <button id="fillBtn" class="secondary">Fill with ON</button>
         <button id="rotateLeftBtn" class="secondary">Rotate Left</button>
         <button id="rotateRightBtn" class="secondary">Rotate Right</button>
-        <button id="printBtn" class="secondary">Print Grid</button>
+        <button id="resetRotationBtn" class="secondary">Reset Rotation</button>
+        <!-- <button id="printBtn" class="secondary">Print Grid</button> -->
       </div>
       <div class="toolbar-group controls">
         <label>
@@ -33,16 +34,46 @@
         </label>
       </div>
 
-      <div class="toolbar-group logic-controls">
-        <button id="threeSequenceModeBtn" class="secondary">3-in-row sequence: ON only</button>
-        <button id="threeScopeModeBtn" class="secondary">3-in-row scope: contiguous only</button>
-        <button id="neighborModeBtn" class="secondary">Neighbors: cardinal</button>
-        <button id="indexBaseBtn" class="secondary">Column base: 1-based</button>
+      <div class="logic-controls">
+
+        <label>
+          <span>3-in-row match type</span>
+          <select id="threeSequenceModeSelect">
+            <option value="on_only">ON cells only</option>
+            <option value="uniform">ON or OFF cells</option>
+          </select>
+        </label>
+
+        <label>
+          <span>3-in-row scope</span>
+          <select id="threeScopeModeSelect">
+            <option value="contiguous">Cell must be in sequence</option>
+            <option value="row_has_sequence">Sequence anywhere in row</option>
+            <option value="whole_row">3+ cells anywhere in row</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Neighbor definition</span>
+          <select id="neighborModeSelect">
+            <option value="cardinal">Cardinal (N,S,E,W)</option>
+            <option value="eight_way">8-direction (Minesweeper)</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Even column numbering</span>
+          <select id="indexBaseModeSelect">
+            <option value="one_based">1-based</option>
+            <option value="zero_based">0-based</option>
+          </select>
+        </label>
+
       </div>
     </header>
 
     <section class="info-row card">
-      <div>Use the Buttons Above to Change Rule Logic</div>
+      <div>Use the Drop-downs Above to Change Rule Logic</div>
     </section>
 
     <main class="main-layout">
@@ -57,7 +88,10 @@
         </section>
 
         <section class="card panel-block log-block">
-          <h2>Log</h2>
+          <div class="toolbar-group">  
+            <h2>Log</h2>
+            <button id="clearLogBtn" class="log">Clear Log</button>
+          </div>
           <pre id="logText" class="panel-text"></pre>
         </section>
       </section>

@@ -6,6 +6,7 @@ class RuleGridApp {
     this.isRunning = false;
     this.highlightedCell = null;
     this.pendingTimeout = null;
+    this.rotationState = 0; // 0 = original, 1 = 90°, 2 = 180°, 3 = 270°
 
     this.rulesets = {
       "1": [
@@ -46,6 +47,7 @@ class RuleGridApp {
     this.threeScopeMode = "contiguous";
     this.neighborMode = "cardinal";
     this.indexBaseMode = "one_based";
+    this.debugRuleIndex = 0;
 
     this.el = {
       grid: document.getElementById("grid"),
@@ -60,11 +62,14 @@ class RuleGridApp {
       fillBtn: document.getElementById("fillBtn"),
       rotateLeftBtn: document.getElementById("rotateLeftBtn"),
       rotateRightBtn: document.getElementById("rotateRightBtn"),
-      printBtn: document.getElementById("printBtn"),
-      threeSequenceModeBtn: document.getElementById("threeSequenceModeBtn"),
-      threeScopeModeBtn: document.getElementById("threeScopeModeBtn"),
-      neighborModeBtn: document.getElementById("neighborModeBtn"),
-      indexBaseBtn: document.getElementById("indexBaseBtn"),
+      resetRotationBtn: document.getElementById("resetRotationBtn"),
+      //printBtn: document.getElementById("printBtn"),
+      clearLogBtn: document.getElementById("clearLogBtn"),
+      threeSequenceModeSelect: document.getElementById("threeSequenceModeSelect"),
+      threeScopeModeSelect: document.getElementById("threeScopeModeSelect"),
+      neighborModeSelect: document.getElementById("neighborModeSelect"),
+      indexBaseModeSelect: document.getElementById("indexBaseModeSelect"),
+      stepRuleBtn: document.getElementById("stepRuleBtn"),
     };
 
     this.init();
@@ -79,10 +84,15 @@ class RuleGridApp {
     });
     this.el.rulesetSelect.value = this.selectedRuleset;
     this.el.delayValue.textContent = this.el.delaySlider.value;
+    this.el.threeSequenceModeSelect.value = this.threeSequenceMode;
+    this.el.threeScopeModeSelect.value = this.threeScopeMode;
+    this.el.neighborModeSelect.value = this.neighborMode;
+    this.el.indexBaseModeSelect.value = this.indexBaseMode;
 
     this.el.rulesetSelect.addEventListener("change", () => {
       this.selectedRuleset = this.el.rulesetSelect.value;
       this.refreshRulesDisplay();
+      this.resetDebugRuleIndex();
       this.logMessage(`Switched to ruleset [${this.selectedRuleset}]`);
     });
 
@@ -96,16 +106,37 @@ class RuleGridApp {
     this.el.fillBtn.addEventListener("click", () => this.fillOn());
     this.el.rotateLeftBtn.addEventListener("click", () => this.rotateLeft());
     this.el.rotateRightBtn.addEventListener("click", () => this.rotateRight());
-    this.el.printBtn.addEventListener("click", () => this.printGrid());
-    this.el.threeSequenceModeBtn.addEventListener("click", () => this.toggleThreeSequenceMode());
-    this.el.threeScopeModeBtn.addEventListener("click", () => this.toggleThreeScopeMode());
-    this.el.neighborModeBtn.addEventListener("click", () => this.toggleNeighborMode());
-    this.el.indexBaseBtn.addEventListener("click", () => this.toggleIndexBaseMode());
+    this.el.resetRotationBtn.addEventListener("click", () => this.resetRotation());
+    // this.el.printBtn.addEventListener("click", () => this.printGrid());
+    this.el.clearLogBtn.addEventListener("click", () => this.clearLog());
+    this.el.threeSequenceModeSelect.addEventListener("change", () => {
+      if (this.isRunning) return;
+      this.threeSequenceMode = this.el.threeSequenceModeSelect.value;
+      this.refreshRulesDisplay();
+      this.logMessage(`3-in-row match type set to ${this.threeSequenceMode}`);
+    });
 
-    this.updateThreeSequenceModeButton();
-    this.updateThreeScopeModeButton();
-    this.updateNeighborModeButton();
-    this.updateIndexBaseButton();
+    this.el.threeScopeModeSelect.addEventListener("change", () => {
+      if (this.isRunning) return;
+      this.threeScopeMode = this.el.threeScopeModeSelect.value;
+      this.refreshRulesDisplay();
+      this.logMessage(`3-in-row scope set to ${this.threeScopeMode}`);
+    });
+
+    this.el.neighborModeSelect.addEventListener("change", () => {
+      if (this.isRunning) return;
+      this.neighborMode = this.el.neighborModeSelect.value;
+      this.refreshRulesDisplay();
+      this.logMessage(`Neighbor mode set to ${this.neighborMode}`);
+    });
+
+    this.el.indexBaseModeSelect.addEventListener("change", () => {
+      if (this.isRunning) return;
+      this.indexBaseMode = this.el.indexBaseModeSelect.value;
+      this.refreshRulesDisplay();
+      this.logMessage(`Column numbering set to ${this.indexBaseMode}`);
+    });
+    this.el.stepRuleBtn.addEventListener("click", () => this.applyNextRuleOnly());
 
     this.refreshRulesDisplay();
     this.logMessage("Ready.");
@@ -125,6 +156,7 @@ class RuleGridApp {
       this.el.threeScopeModeBtn,
       this.el.neighborModeBtn,
       this.el.indexBaseBtn,
+      this.el.stepRuleBtn,
     ].forEach((el) => {
       el.disabled = disabled;
     });
@@ -132,7 +164,16 @@ class RuleGridApp {
 
   refreshRulesDisplay() {
     const threeSequenceLabel = this.threeSequenceMode === "on_only" ? "ON only" : "ON or OFF";
-    const threeScopeLabel = this.threeScopeMode === "contiguous" ? "contiguous only" : "whole row count";
+
+    let threeScopeLabel = "";
+    if (this.threeScopeMode === "contiguous") {
+      threeScopeLabel = "Cell in sequence only";
+    } else if (this.threeScopeMode === "whole_row") {
+      threeScopeLabel = "whole row count";
+    } else {
+      threeScopeLabel = "sequence anywhere in row";
+    }
+
     const neighborLabel = this.neighborMode === "cardinal" ? "cardinal" : "8-way";
     const columnBaseLabel = this.indexBaseMode === "one_based" ? "1-based" : "0-based";
 
@@ -152,78 +193,14 @@ class RuleGridApp {
     this.el.rulesText.textContent = lines.join("\n");
   }
 
+
   logMessage(msg) {
     this.el.logText.textContent += `${msg}\n`;
     this.el.logText.scrollTop = this.el.logText.scrollHeight;
   }
 
-  
-
   logicalColumnNumber(c) {
   return this.indexBaseMode === "one_based" ? c + 1 : c;
-  }
-
-  updateThreeSequenceModeButton() {
-    this.el.threeSequenceModeBtn.textContent = this.threeSequenceMode === "on_only"
-      ? "3-in-row sequence: ON only"
-      : "3-in-row sequence: ON or OFF";
-  }
-
-  toggleThreeSequenceMode() {
-    if (this.isRunning) return;
-    this.threeSequenceMode = this.threeSequenceMode === "on_only" ? "uniform" : "on_only";
-    this.updateThreeSequenceModeButton();
-    this.refreshRulesDisplay();
-    this.logMessage(
-      `3-in-row sequence mode set to ${this.threeSequenceMode === "on_only" ? "ON only" : "ON or OFF"}.`
-    );
-  }
-
-  updateThreeScopeModeButton() {
-    this.el.threeScopeModeBtn.textContent = this.threeScopeMode === "contiguous"
-      ? "3-in-row scope: contiguous only"
-      : "3-in-row scope: whole row count";
-  }
-
-  toggleThreeScopeMode() {
-    if (this.isRunning) return;
-    this.threeScopeMode = this.threeScopeMode === "contiguous" ? "whole_row" : "contiguous";
-    this.updateThreeScopeModeButton();
-    this.refreshRulesDisplay();
-    this.logMessage(
-      `3-in-row scope set to ${this.threeScopeMode === "contiguous" ? "contiguous only" : "whole row count"}.`
-    );
-  }
-
-  updateNeighborModeButton() {
-    this.el.neighborModeBtn.textContent = this.neighborMode === "cardinal"
-      ? "Neighbors: cardinal"
-      : "Neighbors: 8-way";
-  }
-
-  toggleNeighborMode() {
-    if (this.isRunning) return;
-    this.neighborMode = this.neighborMode === "cardinal" ? "eight_way" : "cardinal";
-    this.updateNeighborModeButton();
-    this.refreshRulesDisplay();
-    this.logMessage(
-      `Neighbor mode set to ${this.neighborMode === "cardinal" ? "cardinal" : "8-way"}.`
-    );
-  }
-
-
-  updateIndexBaseButton() {
-    this.el.indexBaseBtn.textContent = this.indexBaseMode === "one_based"
-      ? "Column base: 1-based"
-      : "Column base: 0-based";
-  }
-
-  toggleIndexBaseMode() {
-    if (this.isRunning) return;
-    this.indexBaseMode = this.indexBaseMode === "one_based" ? "zero_based" : "one_based";
-    this.updateIndexBaseButton();
-    this.refreshRulesDisplay();
-    this.logMessage(`Column numbering set to ${this.indexBaseMode === "one_based" ? "1-based" : "0-based"}.`);
   }
 
   renderGrid() {
@@ -274,15 +251,19 @@ class RuleGridApp {
 
   rotateLeft() {
     if (this.isRunning) return;
-    const oldRows = this.rows;
-    const oldCols = this.cols;
-    const newGrid = Array.from({ length: oldCols }, (_, nr) =>
-      Array.from({ length: oldRows }, (_, nc) => this.grid[nc][oldCols - 1 - nr])
-    );
+
+    const newGrid = Array.from({ length: this.cols }, () => Array(this.rows));
+
+    for (let r = 0; r < this.rows; r++) {
+      for (let c = 0; c < this.cols; c++) {
+        newGrid[this.cols - 1 - c][r] = this.grid[r][c];
+      }
+    }
 
     this.grid = newGrid;
-    this.rows = oldCols;
-    this.cols = oldRows;
+    [this.rows, this.cols] = [this.cols, this.rows];
+    this.rotationState = (this.rotationState + 3) % 4;
+
     this.highlightedCell = null;
     this.renderGrid();
     this.logMessage("Grid rotated left.");
@@ -290,18 +271,44 @@ class RuleGridApp {
 
   rotateRight() {
     if (this.isRunning) return;
-    const oldRows = this.rows;
-    const oldCols = this.cols;
-    const newGrid = Array.from({ length: oldCols }, (_, nr) =>
-      Array.from({ length: oldRows }, (_, nc) => this.grid[oldRows - 1 - nc][nr])
-    );
+
+    const newGrid = Array.from({ length: this.cols }, () => Array(this.rows));
+
+    for (let r = 0; r < this.rows; r++) {
+      for (let c = 0; c < this.cols; c++) {
+        newGrid[c][this.rows - 1 - r] = this.grid[r][c];
+      }
+    }
 
     this.grid = newGrid;
-    this.rows = oldCols;
-    this.cols = oldRows;
+    [this.rows, this.cols] = [this.cols, this.rows];
+    this.rotationState = (this.rotationState + 1) % 4;
+
     this.highlightedCell = null;
     this.renderGrid();
     this.logMessage("Grid rotated right.");
+  }
+
+  resetRotation() {
+    if (this.isRunning) return;
+
+    while (this.rotationState !== 0) {
+      const newGrid = Array.from({ length: this.cols }, () => Array(this.rows));
+
+      for (let r = 0; r < this.rows; r++) {
+        for (let c = 0; c < this.cols; c++) {
+          newGrid[this.cols - 1 - c][r] = this.grid[r][c];
+        }
+      }
+
+      this.grid = newGrid;
+      [this.rows, this.cols] = [this.cols, this.rows];
+      this.rotationState = (this.rotationState + 3) % 4;
+    }
+
+    this.highlightedCell = null;
+    this.renderGrid();
+    this.logMessage("Grid rotation reset to original orientation.");
   }
 
   printGrid() {
@@ -311,7 +318,7 @@ class RuleGridApp {
       gridText,
       `Ruleset: ${this.selectedRuleset}`,
       `3-in-row sequence mode: ${this.threeSequenceMode === "on_only" ? "ON only" : "ON or OFF"}`,
-      `3-in-row scope: ${this.threeScopeMode === "contiguous" ? "contiguous only" : "whole row count"}`,
+      `3-in-row scope: ${this.threeScopeMode === "contiguous" ? "contiguous only" : this.threeScopeMode === "whole_row" ? "whole row count" : "sequence anywhere in row"}`,
       `Neighbor mode: ${this.neighborMode === "cardinal" ? "cardinal" : "8-way"}`,
       `Column base: ${this.indexBaseMode === "one_based" ? "1-based" : "0-based"}`,
       "------------------------------",
@@ -319,6 +326,11 @@ class RuleGridApp {
 
     console.log(report);
     this.logMessage(report);
+  }
+
+  clearLog() {
+    this.el.logText.textContent = "";
+    this.logMessage("Ready.");
   }
 
   baseTraversalOrder(direction) {
@@ -395,6 +407,23 @@ class RuleGridApp {
     return count;
   }
 
+  rowHasThreeSequence(r) {
+    for (let c = 0; c <= this.cols - 3; c += 1) {
+      const A = this.isOn(r, c);
+      const B = this.isOn(r, c + 1);
+      const D = this.isOn(r, c + 2);
+
+      if (this.threeSequenceMode === "on_only") {
+        if (A && B && D) return true;
+      } else {
+        if (A === B && B === D) return true;
+      }
+    }
+
+    return false;
+  }
+
+
   hasThreeInARowHorizontally(r, c) {
     if (this.threeScopeMode === "whole_row") {
       const onCount = this.rowOnCount(r);
@@ -405,6 +434,10 @@ class RuleGridApp {
       }
 
       return onCount >= 3 || offCount >= 3;
+    }
+
+    if (this.threeScopeMode === "row_has_sequence") {
+      return this.rowHasThreeSequence(r);
     }
 
     const patterns = [
@@ -456,6 +489,58 @@ class RuleGridApp {
     }
   }
 
+
+  getActiveRulesFromCurrentPosition() {
+    const activeRules = this.rulesets[this.selectedRuleset] || [];
+    return {
+      activeRules,
+      startIndex: this.debugRuleIndex >= 0 && this.debugRuleIndex < activeRules.length
+        ? this.debugRuleIndex
+        : 0,
+    };
+  }
+
+  resetDebugRuleIndex() {
+    this.debugRuleIndex = 0;
+  }
+
+  applyNextRuleOnly() {
+    if (this.isRunning) return;
+
+    const activeRules = this.rulesets[this.selectedRuleset];
+    if (!activeRules || activeRules.length === 0) return;
+
+    if (this.debugRuleIndex >= activeRules.length) {
+      this.debugRuleIndex = 0;
+    }
+
+    const ruleNumber = this.debugRuleIndex + 1;
+    const [direction, conditionName, action] = activeRules[this.debugRuleIndex];
+
+    this.logMessage("========================================");
+    this.logMessage(`Debug step: applying rule ${ruleNumber} of ${activeRules.length}`);
+    this.logMessage(`[${direction}] ${conditionName} -> ${action}`);
+
+    const changed = this.applySingleRule(direction, conditionName, action);
+
+    this.highlightedCell = null;
+    this.renderGrid();
+
+    this.logMessage(`Rule ${ruleNumber} changed ${changed} cell(s).`);
+
+    this.debugRuleIndex += 1;
+
+    if (this.debugRuleIndex >= activeRules.length) {
+      this.logMessage("Reached end of ruleset. Next press will wrap to rule 1.");
+      this.debugRuleIndex = 0;
+    } else {
+      this.logMessage(`Next debug rule will be rule ${this.debugRuleIndex + 1}.`);
+    }
+
+    this.logMessage("========================================");
+  }
+
+
   applySingleRule(direction, conditionName, action) {
     let changed = 0;
     const order = this.baseTraversalOrder(direction);
@@ -471,28 +556,49 @@ class RuleGridApp {
 
   applyAllRulesInstant() {
     if (this.isRunning) return;
-    const activeRules = this.rulesets[this.selectedRuleset];
+
+    const { activeRules, startIndex } = this.getActiveRulesFromCurrentPosition();
+    if (!activeRules.length) return;
+
     this.logMessage("========================================");
-    this.logMessage(`Applying ruleset [${this.selectedRuleset}]...`);
-    for (let i = 0; i < activeRules.length; i += 1) {
+    this.logMessage(
+      startIndex === 0
+        ? "Applying full ruleset instantly from rule 1."
+        : `Continuing ruleset instantly from rule ${startIndex + 1}.`
+    );
+
+    for (let i = startIndex; i < activeRules.length; i += 1) {
       const [direction, conditionName, action] = activeRules[i];
-      const changed = this.applySingleRule(direction, conditionName, action);
-      this.renderGrid();
-      this.logMessage(`Rule ${i + 1}: [${direction}] ${conditionName} -> ${action} changed ${changed} cell(s)`);
+      this.logMessage(`Applying rule ${i + 1}/${activeRules.length}: [${direction}] ${conditionName} -> ${action}`);
+      this.applySingleRule(direction, conditionName, action);
     }
+
     this.highlightedCell = null;
     this.renderGrid();
-    this.logMessage("Done.");
+
+    this.debugRuleIndex = 0;
+
+    this.logMessage("Ruleset pass complete.");
     this.logMessage("========================================");
   }
 
   applyAllRulesAnimated() {
     if (this.isRunning) return;
-    this.ruleIndex = 0;
+
+    const { activeRules, startIndex } = this.getActiveRulesFromCurrentPosition();
+    if (!activeRules.length) return;
+
+    this.ruleIndex = startIndex;
     this.isRunning = true;
     this.setControlsDisabled(true);
+
     this.logMessage("========================================");
-    this.logMessage(`Applying ruleset [${this.selectedRuleset}]...`);
+    this.logMessage(
+      startIndex === 0
+        ? `Applying ruleset [${this.selectedRuleset}] from rule 1...`
+        : `Continuing ruleset [${this.selectedRuleset}] from rule ${startIndex + 1}...`
+    );
+
     this.runNextRule();
   }
 
@@ -502,6 +608,7 @@ class RuleGridApp {
     if (this.ruleIndex >= activeRules.length) {
       this.highlightedCell = null;
       this.renderGrid();
+      this.debugRuleIndex = 0;
       this.logMessage("Done.");
       this.logMessage("========================================");
       this.isRunning = false;

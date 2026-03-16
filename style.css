@@ -48,14 +48,35 @@ body {
 }
 
 .logic-controls {
-  padding-top: 6px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px 18px;
+  margin-top: 10px;
+  padding-top: 12px;
   border-top: 1px solid var(--border);
-  align-items: stretch;
 }
 
-.logic-controls button {
-  min-width: 220px;
-  text-align: left;
+.logic-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.logic-controls select {
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.logic-controls select:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 
 @media (max-width: 720px) {
@@ -98,6 +119,15 @@ button.secondary {
   border-color: #475569;
 }
 
+button.log{
+  background: #1e293b;
+  border-color: #475569;
+  padding:3px 6px;
+  font-size: small;
+  margin-bottom: 10px;
+  margin-left: auto;
+}
+
 button:hover,
 select:hover {
   filter: brightness(1.08);
@@ -129,14 +159,17 @@ input:disabled {
 .grid-panel {
   padding: 16px;
   overflow: auto;
+
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
 }
 
 .grid {
-  --cell-size: 96px;
+  --cell-size: clamp(72px, 7vw, 96px);
   display: grid;
   gap: 8px;
-  width: max-content;
-  max-width: 100%;
+  width: fit-content;
 }
 
 .cell {
