@@ -182,6 +182,27 @@ class RuleGridApp {
     });
   }
 
+
+  formatConditionLabel(conditionName) {
+    const labels = {
+      exactly_1_neighbors: "EXACTLY 1 NEIGHBOR ENABLED",
+      exactly_2_neighbors: "EXACTLY 2 NEIGHBORS ENABLED",
+      exactly_3_neighbors: "EXACTLY 3 NEIGHBORS ENABLED",
+      more_than_1_neighbors: "MORE THAN 1 NEIGHBORS ENABLED",
+      no_neighbors_enabled: "NO NEIGHBORS ENABLED",
+      cell_above_enabled: "CELL ABOVE IS ENABLED",
+      left_and_right_enabled: "LEFT AND RIGHT BOTH ENABLED",
+      column_even_count: "COLUMN HAS EVEN COUNT",
+      on_even_column_and_enabled: "ON EVEN COLUMN AND ENABLED",
+      three_in_a_row_horizontally: "3 IN A ROW HORIZONTALLY",
+      more_enabled_in_row_than_column: "MORE ENABLED IN ROW THAN COLUMN",
+      row_more_than_2_enabled: "ROW HAS MORE THAN 2 ENABLED",
+      row_more_than_3_enabled: "ROW HAS MORE THAN 3 ENABLED",
+    };
+
+    return labels[conditionName] || conditionName.replaceAll("_", " ").toUpperCase();
+  }
+
   refreshRulesDisplay() {
     const threeSequenceLabel = this.threeSequenceMode === "on_only" ? "ON only" : "ON or OFF";
 
@@ -208,7 +229,7 @@ class RuleGridApp {
     ];
 
     for (const [direction, conditionName, action] of this.rulesets[this.selectedRuleset]) {
-      lines.push(`[${direction}] IF ${conditionName.replaceAll("_", " ").toUpperCase()} -> ${action.toUpperCase()}`);
+      lines.push(`[${direction}] IF ${this.formatConditionLabel(conditionName)} -> ${action.toUpperCase()}`);
     }
 
     this.el.rulesText.textContent = lines.join("\n");
