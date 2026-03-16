@@ -152,7 +152,7 @@ class RuleGridApp {
       }
     }
 
-    this.el.startLabel.textContent = `Start: (${this.startRow}, ${this.startCol})`;
+    this.el.startLabel.textContent = `(${this.startRow}, ${this.startCol})`;
   }
 
   toggleCell(r, c) {
