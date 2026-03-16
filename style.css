@@ -7,8 +7,6 @@
   --text: #e5e7eb;
   --muted: #94a3b8;
   --accent: #38bdf8;
-  --start-off: #b45309;
-  --start-on: #ca8a04;
   --off: #4b5563;
   --on: #166534;
   --current: #0284c7;
@@ -150,8 +148,6 @@ input:disabled {
 
 .cell.off { background: var(--off); }
 .cell.on { background: var(--on); }
-.cell.start.off { background: var(--start-off); }
-.cell.start.on { background: var(--start-on); }
 .cell.current { background: var(--current); }
 
 .side-panel {
