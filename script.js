@@ -7,6 +7,7 @@ class RuleGridApp {
     this.highlightedCell = null;
     this.pendingTimeout = null;
     this.rotationState = 0; // 0 = original, 1 = 90°, 2 = 180°, 3 = 270°
+    this.zeroCountsAsEven = true;
 
     this.rulesets = {
       "1": [
@@ -70,6 +71,7 @@ class RuleGridApp {
       neighborModeSelect: document.getElementById("neighborModeSelect"),
       indexBaseModeSelect: document.getElementById("indexBaseModeSelect"),
       stepRuleBtn: document.getElementById("stepRuleBtn"),
+      zeroEvenModeSelect: document.getElementById("zeroEvenModeSelect"),
     };
 
     this.init();
@@ -88,6 +90,7 @@ class RuleGridApp {
     this.el.threeScopeModeSelect.value = this.threeScopeMode;
     this.el.neighborModeSelect.value = this.neighborMode;
     this.el.indexBaseModeSelect.value = this.indexBaseMode;
+    this.el.zeroEvenModeSelect.value = this.zeroCountsAsEven ? "include" : "exclude";
 
     this.el.rulesetSelect.addEventListener("change", () => {
       this.selectedRuleset = this.el.rulesetSelect.value;
@@ -136,6 +139,16 @@ class RuleGridApp {
       this.refreshRulesDisplay();
       this.logMessage(`Column numbering set to ${this.indexBaseMode}`);
     });
+
+    this.el.zeroEvenModeSelect.addEventListener("change", () => {
+      if (this.isRunning) return;
+      this.zeroCountsAsEven = this.el.zeroEvenModeSelect.value === "include";
+      this.refreshRulesDisplay();
+      this.logMessage(
+        `Zero in even checks set to ${this.zeroCountsAsEven ? "0 counts as even" : "0 does not count as even"}`
+      );
+    });
+
     this.el.stepRuleBtn.addEventListener("click", () => this.applyNextRuleOnly());
 
     this.refreshRulesDisplay();
@@ -158,6 +171,7 @@ class RuleGridApp {
       this.el.indexBaseModeSelect,
       this.el.stepRuleBtn,
       this.el.resetRotationBtn,
+      this.el.zeroEvenModeSelect,
     ].forEach((el) => {
       if (el) el.disabled = disabled;
     });
@@ -184,6 +198,7 @@ class RuleGridApp {
       `3-in-row scope: ${threeScopeLabel}`,
       `Neighbor mode: ${neighborLabel}`,
       `Even-column mode: ${columnBaseLabel}`,
+      `Zero in even checks: ${this.zeroCountsAsEven ? "Yes" : "No"}`,
       "",
     ];
 
@@ -408,6 +423,14 @@ class RuleGridApp {
     return count;
   }
 
+  isEven(n) {
+    if (n === 0 && this.zeroCountsAsEven === false) {
+      return false;
+    }
+
+    return n % 2 === 0;
+  }
+
   rowHasThreeSequence(r) {
     for (let c = 0; c <= this.cols - 3; c += 1) {
       const A = this.isOn(r, c);
@@ -480,8 +503,10 @@ class RuleGridApp {
       case "no_neighbors_enabled": return this.neighborCount(r, c) === 0;
       case "cell_above_enabled": return this.isOn(r - 1, c);
       case "left_and_right_enabled": return this.isOn(r, c - 1) && this.isOn(r, c + 1);
-      case "column_even_count": return this.columnOnCount(c) % 2 === 0;
-      case "on_even_column_and_enabled": return (this.logicalColumnNumber(c) % 2 === 0) && this.isOn(r, c);
+      case "column_even_count":
+        return this.isEven(this.columnOnCount(c));
+      case "on_even_column_and_enabled":
+        return this.isEven(this.logicalColumnNumber(c)) && this.isOn(r, c);
       case "three_in_a_row_horizontally": return this.hasThreeInARowHorizontally(r, c);
       case "row_more_than_3_enabled": return this.rowOnCount(r) > 3;
       case "row_more_than_2_enabled": return this.rowOnCount(r) > 2;
